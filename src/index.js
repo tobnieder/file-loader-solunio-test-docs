@@ -76,7 +76,7 @@ export default function loader(content) {
       }
 
       const isImmutable = /\[([^:\]]+:)?(hash|contenthash)(:[^\]]+)?]/gi.test(
-        normalizedName,
+        normalizedName
       );
 
       if (isImmutable === true) {
@@ -86,42 +86,35 @@ export default function loader(content) {
     }
 
     assetInfo.sourceFilename = normalizePath(
-      path.relative(this.rootContext, this.resourcePath),
+      path.relative(this.rootContext, this.resourcePath)
     );
 
     const extension = path.extname(assetInfo.sourceFilename);
     const darkImage = path.join(
       path.dirname(assetInfo.sourceFilename),
-      `${path.basename(assetInfo.sourceFilename, extension)}_dark${extension}`,
+      `${path.basename(assetInfo.sourceFilename, extension)}_dark${extension}`
     );
 
     darkAssetInfo.sourceFilename = darkImage;
 
     if (fs.existsSync(darkImage)) {
-      console.log('darkImage EXISTS', darkImage, publicPath);
-
       const extension = path.extname(outputPath);
       const darkOutputPath = path.join(
         path.dirname(outputPath),
-        `${path.basename(outputPath, extension)}_dark${extension}`,
+        `${path.basename(outputPath, extension)}_dark${extension}`
       );
       const darkString = transf(darkOutputPath);
 
       optionalDark = `dark: ${darkString}`;
-      console.log('optionalDark', optionalDark);
       this.emitFile(
         darkOutputPath,
         fs.readFileSync(darkImage),
         null,
-        darkAssetInfo,
+        darkAssetInfo
       );
     }
 
-    console.log('emitted', outputPath);
-
     this.emitFile(outputPath, content, null, assetInfo);
-  } else {
-    console.log('NOT emitted', outputPath, options);
   }
 
   const esModule =
@@ -129,9 +122,6 @@ export default function loader(content) {
 
   if (optionalDark === null) {
     return `${esModule ? 'export default' : 'module.exports ='} ${publicPath};`;
-    /* return `${
-      esModule ? 'export default' : 'module.exports ='
-    } { light:${publicPath}};`; */
   }
 
   return `${
