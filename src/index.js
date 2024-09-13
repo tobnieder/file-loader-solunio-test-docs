@@ -1,14 +1,29 @@
 import path from 'path';
 import fs from 'fs';
 
+import gm from 'gm';
+
 import { getOptions, interpolateName } from 'loader-utils';
 import { validate } from 'schema-utils';
 
 import schema from './options.json';
 import { normalizePath } from './utils';
 
-export default function loader(content) {
+async function sizeOfImage(image) {
+  return new Promise((resolve, reject) => {
+    image.size((err, size) => {
+      if (err) {
+        reject(err);
+      }
+      resolve(size);
+    });
+  });
+}
+
+export default async function loader(content) {
   const options = getOptions(this);
+
+  const imageMagick = gm.subClass({ imageMagick: true });
 
   validate(schema, options, {
     name: 'File Loader',
@@ -98,6 +113,24 @@ export default function loader(content) {
     darkAssetInfo.sourceFilename = darkImage;
 
     if (fs.existsSync(darkImage)) {
+      const sizeOfDarkImage = await sizeOfImage(imageMagick(darkImage));
+      const sizeOfLightImage = await sizeOfImage(
+        imageMagick(assetInfo.sourceFilename)
+      );
+
+      if (
+        sizeOfDarkImage.height !== sizeOfLightImage.height ||
+        sizeOfDarkImage.width !== sizeOfLightImage.width
+      ) {
+        throw new Error(
+          `Images don't have the same size: ${JSON.stringify(
+            sizeOfDarkImage
+          )} != ${JSON.stringify(sizeOfLightImage)}\n${darkImage} - ${
+            assetInfo.sourceFilename
+          }`
+        );
+      }
+
       const extension = path.extname(outputPath);
       const darkOutputPath = path.join(
         path.dirname(outputPath),
